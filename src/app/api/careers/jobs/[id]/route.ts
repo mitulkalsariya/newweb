@@ -3,14 +3,15 @@ import { getJobById, updateJob, deleteJob } from '@/lib/careers'
 import { JobPosting } from '@/lib/careers'
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const job = await getJobById(params.id)
+    const { id } = await params
+    const job = await getJobById(id)
 
     if (!job) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 })
@@ -25,6 +26,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
+    const { id } = await params
     const body = await request.json()
 
     const jobData: Partial<JobPosting> = {
@@ -41,7 +43,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       isActive: body.isActive,
     }
 
-    const updatedJob = await updateJob(params.id, jobData)
+    const updatedJob = await updateJob(id, jobData)
     return NextResponse.json(updatedJob)
   } catch (error) {
     console.error('Error updating job:', error)
@@ -54,7 +56,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    await deleteJob(params.id)
+    const { id } = await params
+    await deleteJob(id)
     return NextResponse.json({ message: 'Job deleted successfully' })
   } catch (error) {
     console.error('Error deleting job:', error)
