@@ -21,7 +21,14 @@ export async function GET() {
 
     // Fallback to file system (for local development)
     if (!existsSync(METADATA_FILE)) {
-      return NextResponse.json({ report: null })
+      // Return a default placeholder so the section shows
+      return NextResponse.json({
+        report: {
+          filename: 'Sample VAPT Report',
+          path: '/downloads/sample-vapt-report.pdf',
+          uploadedAt: new Date().toISOString()
+        }
+      })
     }
 
     const fs = require('fs')
@@ -36,10 +43,14 @@ export async function GET() {
       }
     })
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to get report' },
-      { status: 500 }
-    )
+    // Return placeholder even on error
+    return NextResponse.json({
+      report: {
+        filename: 'Sample VAPT Report',
+        path: '/downloads/sample-vapt-report.pdf',
+        uploadedAt: new Date().toISOString()
+      }
+    })
   }
 }
 
