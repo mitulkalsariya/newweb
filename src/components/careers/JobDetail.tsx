@@ -202,7 +202,7 @@ export default function JobDetail({ job }: JobDetailProps) {
             </div>
           </motion.div>
 
-          {/* Application Form */}
+          {/* Application Form / External Link */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -211,13 +211,39 @@ export default function JobDetail({ job }: JobDetailProps) {
             <div className="bg-white rounded-lg shadow-sm p-6 sticky top-8">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">Apply for This Position</h2>
 
-              {applicationError && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-800">{applicationError}</p>
+              {job.applyUrl ? (
+                /* External Application Link */
+                <div className="space-y-4">
+                  <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
+                    <p className="text-sm text-gray-700 mb-4">
+                      Click the button below to apply for this position on our application platform.
+                      You'll be redirected to complete your application.
+                    </p>
+                    <a
+                      href={job.applyUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full bg-primary-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-primary-700 transition-colors flex items-center justify-center"
+                    >
+                      <Send className="mr-2 h-4 w-4" />
+                      Apply Now (External Platform)
+                    </a>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    You will be redirected to an external platform to complete your application.
+                    Make sure you have your resume/CV ready.
+                  </p>
                 </div>
-              )}
+              ) : (
+                /* Internal Application Form */
+                <>
+                  {applicationError && (
+                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <p className="text-sm text-red-800">{applicationError}</p>
+                    </div>
+                  )}
 
-              <form onSubmit={handleApply} className="space-y-4">
+                  <form onSubmit={handleApply} className="space-y-4">
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                     Full Name *
@@ -318,12 +344,14 @@ export default function JobDetail({ job }: JobDetailProps) {
                     </>
                   )}
                 </button>
-              </form>
+                  </form>
 
-              <p className="text-xs text-gray-500 mt-4">
-                By submitting this application, you agree to our privacy policy and terms of service.
-                We will contact you regarding your application status.
-              </p>
+                  <p className="text-xs text-gray-500 mt-4">
+                    By submitting this application, you agree to our privacy policy and terms of service.
+                    We will contact you regarding your application status.
+                  </p>
+                </>
+              )}
             </div>
           </motion.div>
         </div>

@@ -17,6 +17,7 @@ interface JobPosting {
   benefits: string[]
   postedDate: string
   applicationDeadline?: string
+  applyUrl?: string
   isActive: boolean
 }
 
@@ -63,6 +64,7 @@ export default function CareerEditor({ job, onClose }: CareerEditorProps) {
     requirements: [] as string[],
     benefits: [] as string[],
     applicationDeadline: '',
+    applyUrl: '',
     isActive: true,
   })
   const [requirementInput, setRequirementInput] = useState('')
@@ -82,6 +84,7 @@ export default function CareerEditor({ job, onClose }: CareerEditorProps) {
         requirements: job.requirements,
         benefits: job.benefits,
         applicationDeadline: job.applicationDeadline || '',
+        applyUrl: job.applyUrl || '',
         isActive: job.isActive,
       })
     }
@@ -445,6 +448,25 @@ export default function CareerEditor({ job, onClose }: CareerEditorProps) {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 min={new Date().toISOString().split('T')[0]}
               />
+            </div>
+
+            {/* External Apply URL */}
+            <div>
+              <label htmlFor="applyUrl" className="block text-sm font-medium text-gray-700 mb-2">
+                External Application URL (Optional)
+              </label>
+              <input
+                type="url"
+                id="applyUrl"
+                value={formData.applyUrl}
+                onChange={(e) => setFormData({ ...formData, applyUrl: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                placeholder="https://forms.google.com/..."
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                If provided, candidates will be redirected to this URL instead of the built-in form.
+                Use Google Forms, Typeform, or your ATS link.
+              </p>
             </div>
 
             {/* Status */}

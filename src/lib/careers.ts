@@ -17,6 +17,7 @@ export interface JobPosting {
   benefits: string[]
   postedDate: string
   applicationDeadline?: string
+  applyUrl?: string
   isActive: boolean
 }
 
@@ -47,6 +48,7 @@ const sampleJobs: JobPosting[] = [
       'Health insurance coverage'
     ],
     postedDate: '2025-12-30',
+    applyUrl: 'https://forms.gle/example',
     isActive: true
   },
   {
@@ -71,6 +73,7 @@ const sampleJobs: JobPosting[] = [
       'Performance incentives'
     ],
     postedDate: '2025-12-29',
+    applyUrl: 'https://forms.gle/example',
     isActive: true
   }
 ]
