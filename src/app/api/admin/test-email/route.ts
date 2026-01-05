@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     const settings = JSON.parse(data)
 
     // Create transporter
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       host: settings.host,
       port: settings.port,
       secure: settings.secure,
