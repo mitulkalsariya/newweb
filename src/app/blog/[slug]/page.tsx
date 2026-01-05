@@ -6,16 +6,17 @@ import BlogPost from '@/components/blog/BlogPost'
 import { getAllPosts, getPostBySlug } from '@/lib/blog'
 
 interface BlogPostPageProps {
-  params: {
+  params: Promise<{
     slug: string
-  }
+  }>
 }
 
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
   let post = null
 
   try {
-    post = await getPostBySlug(params.slug)
+    const { slug } = await params
+    post = await getPostBySlug(slug)
   } catch (error) {
     console.error('Error fetching post for metadata:', error)
   }
@@ -48,7 +49,7 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
 }
 
 export async function generateStaticParams() {
-  let posts = []
+  let posts: any[] = []
 
   try {
     posts = await getAllPosts()
@@ -65,7 +66,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   let post = null
 
   try {
-    post = await getPostBySlug(params.slug)
+    const { slug } = await params
+    post = await getPostBySlug(slug)
   } catch (error) {
     console.error('Error fetching post:', error)
   }
