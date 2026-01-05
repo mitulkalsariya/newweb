@@ -2,14 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPostBySlug } from '@/lib/blog'
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     slug: string
-  }
+  }>
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const post = await getPostBySlug(params.slug)
+    const { slug } = await params
+    const post = await getPostBySlug(slug)
 
     if (!post) {
       return NextResponse.json(
