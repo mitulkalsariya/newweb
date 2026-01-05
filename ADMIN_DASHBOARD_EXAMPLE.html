@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberShield Pro - Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="app" class="min-h-screen">
+        <!-- Login Page -->
+        <div id="loginPage" class="min-h-screen flex items-center justify-center">
+            <div class="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+                <h1 class="text-2xl font-bold mb-6 text-center">Admin Login</h1>
+                <div id="loginError" class="hidden mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm"></div>
+                <form id="loginForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Username</label>
+                        <input type="text" id="username" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Password</label>
+                        <input type="password" id="password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">
+                        Login
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="dashboardPage" class="hidden">
+            <!-- Header -->
+            <header class="bg-white shadow-sm">
+                <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+                    <h1 class="text-2xl font-bold">Admin Dashboard</h1>
+                    <button id="logoutBtn" class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900">
+                        Logout
+                    </button>
+                </div>
+            </header>
+
+            <!-- Main Content -->
+            <main class="max-w-7xl mx-auto px-6 py-8">
+                <!-- VAPT Report Manager -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+                    <h2 class="text-xl font-bold mb-6">VAPT Report Manager</h2>
+                    
+                    <!-- Success/Error Messages -->
+                    <div id="reportSuccess" class="hidden mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800"></div>
+                    <div id="reportError" class="hidden mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800"></div>
+                    
+                    <!-- Current Report -->
+                    <div id="currentReport" class="mb-6"></div>
+                    
+                    <!-- Upload Section -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Upload VAPT Report</label>
+                        <div class="flex items-center space-x-4">
+                            <label class="flex-1 cursor-pointer">
+                                <div class="flex items-center justify-center px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 transition">
+                                    <span id="uploadText" class="text-sm text-gray-600">Choose PDF file</span>
+                                </div>
+                                <input type="file" id="fileInput" accept=".pdf" class="hidden">
+                            </label>
+                        </div>
+                        <p class="mt-2 text-xs text-gray-500">Only PDF files are allowed. This report will be available for download on the website.</p>
+                    </div>
+                </div>
+
+                <!-- Quick Links -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <h2 class="text-xl font-bold mb-4">Quick Links</h2>
+                    <div class="space-y-2">
+                        <a href="/services/vapt" target="_blank" class="block text-blue-600 hover:text-blue-700">
+                            → View VAPT Services Page
+                        </a>
+                        <a href="/api/vapt-report" target="_blank" class="block text-blue-600 hover:text-blue-700">
+                            → Check Current Report API
+                        </a>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin;
+        let token = localStorage.getItem('admin_token');
+
+        // Check auth on load
+        if (token) {
+            verifyToken();
+        }
+
+        // Login Form
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch(`${API_URL}/api/admin/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    token = data.token;
+                    localStorage.setItem('admin_token', token);
+                    showDashboard();
+                } else {
+                    showError('loginError', data.error || 'Login failed');
+                }
+            } catch (error) {
+                showError('loginError', 'Connection error');
+            }
+        });
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('admin_token');
+            token = null;
+            showLogin();
+        });
+
+        // File Upload
+        document.getElementById('fileInput').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (!file.name.endsWith('.pdf')) {
+                showError('reportError', 'Only PDF files are allowed');
+                return;
+            }
+
+            const uploadText = document.getElementById('uploadText');
+            uploadText.textContent = 'Uploading...';
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch(`${API_URL}/api/admin/vapt-report`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showSuccess('reportSuccess', 'VAPT report uploaded successfully');
+                    loadCurrentReport();
+                } else {
+                    showError('reportError', data.error || 'Upload failed');
+                }
+            } catch (error) {
+                showError('reportError', 'Upload failed');
+            } finally {
+                uploadText.textContent = 'Choose PDF file';
+                e.target.value = '';
+            }
+        });
+
+        // Verify Token
+        async function verifyToken() {
+            try {
+                const response = await fetch(`${API_URL}/api/admin/auth/verify`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    showDashboard();
+                } else {
+                    showLogin();
+                }
+            } catch (error) {
+                showLogin();
+            }
+        }
+
+        // Load Current Report
+        async function loadCurrentReport() {
+            try {
+                const response = await fetch(`${API_URL}/api/admin/vapt-report`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const data = await response.json();
+                
+                if (data.report) {
+                    displayReport(data.report);
+                } else {
+                    document.getElementById('currentReport').innerHTML = `
+                        <div class="p-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 text-center">
+                            <svg class="h-12 w-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <p class="text-gray-600">No VAPT report uploaded yet</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading report:', error);
+            }
+        }
+
+        // Display Report
+        function displayReport(report) {
+            const size = formatFileSize(report.size);
+            const date = new Date(report.uploadedAt).toLocaleString();
+            
+            document.getElementById('currentReport').innerHTML = `
+                <div class="p-6 bg-gray-50 rounded-lg border border-gray-200">
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-start space-x-4">
+                            <div class="p-3 bg-blue-100 rounded-lg">
+                                <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900 mb-1">${report.filename}</h3>
+                                <div class="space-y-1 text-sm text-gray-600">
+                                    <p>Size: ${size}</p>
+                                    <p>Uploaded: ${date}</p>
+                                    <p>Uploaded by: ${report.uploadedBy}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <a href="${report.path}" download class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                                Download
+                            </a>
+                            <button onclick="deleteReport()" class="px-3 py-2 border border-red-300 rounded-lg text-sm font-medium text-red-700 bg-white hover:bg-red-50">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Delete Report
+        async function deleteReport() {
+            if (!confirm('Are you sure you want to delete the current VAPT report?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/admin/vapt-report`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    showSuccess('reportSuccess', 'VAPT report deleted successfully');
+                    loadCurrentReport();
+                } else {
+                    const data = await response.json();
+                    showError('reportError', data.error || 'Delete failed');
+                }
+            } catch (error) {
+                showError('reportError', 'Delete failed');
+            }
+        }
+
+        // Helper Functions
+        function showDashboard() {
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('dashboardPage').classList.remove('hidden');
+            loadCurrentReport();
+        }
+
+        function showLogin() {
+            document.getElementById('loginPage').classList.remove('hidden');
+            document.getElementById('dashboardPage').classList.add('hidden');
+        }
+
+        function showError(elementId, message) {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 5000);
+        }
+
+        function showSuccess(elementId, message) {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 3000);
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        // Make deleteReport available globally
+        window.deleteReport = deleteReport;
+    </script>
+</body>
+</html>
+
