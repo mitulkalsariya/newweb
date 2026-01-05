@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create transporter with admin settings
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       host: smtpSettings.host,
       port: smtpSettings.port,
       secure: smtpSettings.secure,

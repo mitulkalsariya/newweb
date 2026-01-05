@@ -35,7 +35,12 @@ export default function VAPTReportCTA() {
     }
   }
 
-  if (loading || !report) {
+  if (loading) {
+    return null
+  }
+
+  // If no report, don't show the section
+  if (!report) {
     return null
   }
 

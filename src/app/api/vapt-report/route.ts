@@ -7,6 +7,19 @@ const METADATA_FILE = path.join(process.cwd(), 'data', 'vapt-report.json')
 // GET - Get current VAPT report for public access
 export async function GET() {
   try {
+    // Check for environment variable first (for Vercel/production)
+    const envReportUrl = process.env.VAPT_REPORT_URL
+    if (envReportUrl) {
+      return NextResponse.json({
+        report: {
+          filename: 'Sample VAPT Report',
+          path: envReportUrl,
+          uploadedAt: new Date().toISOString()
+        }
+      })
+    }
+
+    // Fallback to file system (for local development)
     if (!existsSync(METADATA_FILE)) {
       return NextResponse.json({ report: null })
     }
