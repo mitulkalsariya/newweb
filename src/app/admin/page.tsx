@@ -5,6 +5,7 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import AdminDashboard from '@/components/admin/AdminDashboard'
 import VAPTReportManager from '@/components/admin/VAPTReportManager'
+import SMTPSettings from '@/components/admin/SMTPSettings'
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -182,6 +183,9 @@ export default function AdminPage() {
 
       <main className="py-12">
         <div className="mx-auto max-w-7xl px-6 lg:px-8 space-y-8">
+          {/* SMTP Settings */}
+          <SMTPSettings />
+          
           {/* VAPT Report Manager */}
           <VAPTReportManager />
           

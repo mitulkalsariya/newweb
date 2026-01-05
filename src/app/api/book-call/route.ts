@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
+import { readFile } from 'fs/promises'
+import { existsSync } from 'fs'
+import path from 'path'
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-})
+const SETTINGS_FILE = path.join(process.cwd(), 'data', 'smtp-settings.json')
+
+async function getSMTPSettings() {
+  if (existsSync(SETTINGS_FILE)) {
+    const data = await readFile(SETTINGS_FILE, 'utf-8')
+    return JSON.parse(data)
+  }
+  return null
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -104,24 +107,47 @@ export async function POST(request: NextRequest) {
       </div>
     `
 
+    // Get SMTP settings
+    const smtpSettings = await getSMTPSettings()
+
+    if (!smtpSettings) {
+      // If no SMTP settings, still accept booking but don't send email
+      console.warn('SMTP not configured, email notifications disabled')
+      return NextResponse.json(
+        { message: 'Consultation booked successfully (email notifications not configured)' },
+        { status: 200 }
+      )
+    }
+
+    // Create transporter with admin settings
+    const transporter = nodemailer.createTransporter({
+      host: smtpSettings.host,
+      port: smtpSettings.port,
+      secure: smtpSettings.secure,
+      auth: {
+        user: smtpSettings.user,
+        pass: smtpSettings.password
+      }
+    })
+
     // Send email to admin
     await transporter.sendMail({
-      from: process.env.SMTP_USER,
-      to: process.env.ADMIN_EMAIL || 'admin@cybershieldpro.com',
-      subject: `New Consultation Booking: ${name} from ${company}`,
+      from: `"${smtpSettings.fromName}" <${smtpSettings.fromEmail}>`,
+      to: smtpSettings.adminEmail,
+      subject: `🔔 New Consultation Booking: ${name} from ${company}`,
       html: adminEmailContent,
     })
 
     // Send confirmation email to client
     await transporter.sendMail({
-      from: process.env.SMTP_USER,
+      from: `"${smtpSettings.fromName}" <${smtpSettings.fromEmail}>`,
       to: email,
       subject: 'Consultation Booking Confirmation - CyberShield Pro',
       html: clientEmailContent,
     })
 
     return NextResponse.json(
-      { message: 'Consultation booked successfully' },
+      { message: 'Consultation booked successfully and confirmation email sent' },
       { status: 200 }
     )
   } catch (error) {
