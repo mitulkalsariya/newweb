@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 }
 
 export default async function BlogPage() {
-  let posts = []
+  let posts: any[] = []
 
   try {
     posts = await getAllPosts()
